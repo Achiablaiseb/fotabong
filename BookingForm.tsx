@@ -2,20 +2,50 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Clock, User, Phone, Mail, Briefcase, MessageSquare, Send, CheckCircle2 } from 'lucide-react';
+import { supabase } from './lib/supabase';
+
+import { useToast } from './components/Toast';
+import { Loader2 } from 'lucide-react';
 
 const BookingForm = () => {
+  const { showToast } = useToast();
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setLoading(true);
+    const formData = new FormData(e.target as HTMLFormElement);
+
+    const bookingData = {
+      client_name: formData.get('client_name') as string,
+      phone: formData.get('phone') as string,
+      email: formData.get('email') as string,
+      service_type: formData.get('service_type') as string,
+      description: `Preferred Date: ${formData.get('date')} | Time: ${formData.get('time')}\n\nMessage: ${formData.get('message')}`
+    };
+
+    try {
+      const { error } = await supabase.from('bookings').insert([bookingData]);
+
+      if (error) throw error;
+
+      setSubmitted(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (error) {
+      console.error('Error submitting booking:', error);
+      showToast('Failed to submit booking. Please try again.', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (submitted) {
     return (
       <section className="py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div 
+          <motion.div
             {...({
               initial: { opacity: 0, scale: 0.9 },
               animate: { opacity: 1, scale: 1 },
@@ -28,10 +58,10 @@ const BookingForm = () => {
             </div>
             <h3 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">Booking Successful!</h3>
             <p className="text-gray-600 text-lg mb-10 leading-relaxed">
-              Thank you for choosing Fotabong Royal Enterprise. Your consultation request has been received. 
+              Thank you for choosing Fotabong Royal Enterprise. Your consultation request has been received.
               Our team will contact you within 24 hours to confirm your booking.
             </p>
-            <button 
+            <button
               onClick={() => setSubmitted(false)}
               className="bg-primary text-white px-10 py-4 rounded-2xl font-black hover:bg-blue-800 transition-all shadow-lg shadow-blue-900/20"
             >
@@ -52,7 +82,7 @@ const BookingForm = () => {
           <div className="w-24 h-1.5 bg-chocolate mx-auto rounded-full"></div>
         </div>
 
-        <motion.div 
+        <motion.div
           {...({
             initial: { opacity: 0, y: 30 },
             whileInView: { opacity: 1, y: 0 },
@@ -104,13 +134,13 @@ const BookingForm = () => {
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2">
                       <User size={12} className="text-primary" /> Full Name
                     </label>
-                    <input required type="text" placeholder="John Doe" className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all font-medium" />
+                    <input required name="client_name" type="text" placeholder="John Doe" className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all font-medium" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2">
                       <Phone size={12} className="text-primary" /> Phone Number
                     </label>
-                    <input required type="tel" placeholder="+237 ..." className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all font-medium" />
+                    <input required name="phone" type="tel" placeholder="+237 ..." className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all font-medium" />
                   </div>
                 </div>
 
@@ -119,13 +149,13 @@ const BookingForm = () => {
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2">
                       <Mail size={12} className="text-primary" /> Email Address
                     </label>
-                    <input required type="email" placeholder="email@example.com" className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all font-medium" />
+                    <input required name="email" type="email" placeholder="email@example.com" className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all font-medium" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2">
                       <Briefcase size={12} className="text-primary" /> Service Type
                     </label>
-                    <select required className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all appearance-none font-medium">
+                    <select required name="service_type" className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all appearance-none font-medium">
                       <option value="">Select a service</option>
                       <option>Building Construction</option>
                       <option>Road/Bridge Works</option>
@@ -141,13 +171,13 @@ const BookingForm = () => {
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2">
                       <Calendar size={12} className="text-primary" /> Preferred Date
                     </label>
-                    <input required type="date" className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all font-medium" />
+                    <input required name="date" type="date" className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all font-medium" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2">
                       <Clock size={12} className="text-primary" /> Preferred Time
                     </label>
-                    <input required type="time" className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all font-medium" />
+                    <input required name="time" type="time" className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all font-medium" />
                   </div>
                 </div>
 
@@ -155,11 +185,15 @@ const BookingForm = () => {
                   <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2">
                     <MessageSquare size={12} className="text-primary" /> Message / Project Description
                   </label>
-                  <textarea rows={4} placeholder="Tell us more about your construction needs or land inquiry..." className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all font-medium"></textarea>
+                  <textarea rows={4} name="message" placeholder="Tell us more about your construction needs or land inquiry..." className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all font-medium"></textarea>
                 </div>
 
-                <button type="submit" className="w-full bg-primary text-white py-5 rounded-2xl font-black text-lg flex items-center justify-center gap-3 shadow-lg shadow-blue-900/20 hover:bg-blue-800 transition-all group">
-                  Submit Booking <Send size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-primary text-white py-5 rounded-2xl font-black text-lg flex items-center justify-center gap-3 shadow-lg shadow-blue-900/20 hover:bg-blue-800 transition-all group disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {loading ? <Loader2 className="animate-spin" /> : <>Submit Booking <Send size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /></>}
                 </button>
               </form>
             </div>

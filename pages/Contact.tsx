@@ -1,10 +1,42 @@
 
 import React from 'react';
 import { Mail, Phone, MapPin, MessageCircle, Send } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import { COMPANY_INFO } from '../constants';
 import BookingForm from '../BookingForm';
+import { useToast } from '../components/Toast';
+import { Loader2 } from 'lucide-react';
+import { useState } from 'react';
 
 const Contact = () => {
+  const { showToast } = useToast();
+  const [loading, setLoading] = useState(false);
+
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const formData = new FormData(e.target as HTMLFormElement);
+
+    try {
+      const { error } = await supabase.from('contact_messages').insert([{
+        name: formData.get('name') as string,
+        email: formData.get('email') as string,
+        subject: formData.get('subject') as string,
+        message: formData.get('message') as string,
+      }]);
+
+      if (error) throw error;
+
+      showToast('Message sent successfully! We will contact you soon.', 'success');
+      (e.target as HTMLFormElement).reset();
+    } catch (error) {
+      console.error('Error sending message:', error);
+      showToast('Failed to send message. Please try again.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="pt-20">
       <section className="py-24 bg-white">
@@ -52,7 +84,7 @@ const Contact = () => {
               </div>
 
               <div className="mt-16">
-                <a 
+                <a
                   href={`https://wa.me/${COMPANY_INFO.whatsapp}`}
                   className="inline-flex items-center gap-4 bg-green-500 text-white px-10 py-5 rounded-3xl font-black text-lg shadow-xl shadow-green-500/20 hover:scale-105 transition-transform"
                 >
@@ -63,20 +95,20 @@ const Contact = () => {
 
             <div className="bg-gray-50 p-10 md:p-16 rounded-[3rem] border border-gray-100">
               <h3 className="text-3xl font-black mb-8 text-gray-900">Send a Message</h3>
-              <form className="space-y-6">
+              <form className="space-y-6" onSubmit={handleContactSubmit}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-black text-gray-700 mb-2 uppercase tracking-widest">Full Name</label>
-                    <input type="text" className="w-full bg-white border border-gray-200 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-primary transition-all" />
+                    <input required name="name" type="text" className="w-full bg-white border border-gray-200 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-primary transition-all disabled:opacity-50" disabled={loading} />
                   </div>
                   <div>
                     <label className="block text-sm font-black text-gray-700 mb-2 uppercase tracking-widest">Email Address</label>
-                    <input type="email" className="w-full bg-white border border-gray-200 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-primary transition-all" />
+                    <input required name="email" type="email" className="w-full bg-white border border-gray-200 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-primary transition-all disabled:opacity-50" disabled={loading} />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-black text-gray-700 mb-2 uppercase tracking-widest">Service Required</label>
-                  <select className="w-full bg-white border border-gray-200 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-primary transition-all appearance-none">
+                  <select name="subject" className="w-full bg-white border border-gray-200 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-primary transition-all appearance-none disabled:opacity-50" disabled={loading}>
                     <option>Construction</option>
                     <option>Land Acquisition</option>
                     <option>Architectural Design</option>
@@ -85,10 +117,13 @@ const Contact = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-black text-gray-700 mb-2 uppercase tracking-widest">Your Message</label>
-                  <textarea rows={5} className="w-full bg-white border border-gray-200 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-primary transition-all"></textarea>
+                  <textarea required name="message" rows={5} className="w-full bg-white border border-gray-200 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-primary transition-all disabled:opacity-50" disabled={loading}></textarea>
                 </div>
-                <button className="w-full bg-primary text-white py-5 rounded-2xl font-black text-lg flex items-center justify-center gap-3 shadow-lg shadow-blue-900/20 hover:bg-blue-800 transition-colors">
-                  Submit Inquiry <Send size={20} />
+                <button
+                  disabled={loading}
+                  className="w-full bg-primary text-white py-5 rounded-2xl font-black text-lg flex items-center justify-center gap-3 shadow-lg shadow-blue-900/20 hover:bg-blue-800 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {loading ? <Loader2 className="animate-spin" /> : <>Submit Inquiry <Send size={20} /></>}
                 </button>
               </form>
             </div>

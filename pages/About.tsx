@@ -13,7 +13,7 @@ const About = () => {
         <div className="absolute inset-0 z-0 overflow-hidden">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full min-w-[177.77vh] h-full min-h-[56.25vw]">
             <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-              <iframe 
+              <iframe
                 src="https://streamable.com/e/qqen15?autoplay=1&muted=1&loop=1"
                 allow="autoplay; fullscreen"
                 allowFullScreen
@@ -27,7 +27,7 @@ const About = () => {
 
         <div className="max-w-7xl mx-auto px-4 text-center relative z-20 w-full">
           {/* Cast motion.h1 to any to avoid IntrinsicAttributes typing error */}
-          <motion.h1 
+          <motion.h1
             {...({
               initial: { opacity: 0, y: 20 },
               animate: { opacity: 1, y: 0 }
@@ -47,10 +47,10 @@ const About = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
             <div className="relative">
-              <img 
-                src="https://images.unsplash.com/photo-1503387762-592dea58ef23?auto=format&fit=crop&q=80&w=1200" 
+              <img
+                src="https://i.postimg.cc/1zwk3jhX/Whats-App-Image-2025-05-31-at-13-58-56-1bb004fd.jpg"
                 className="rounded-[3rem] shadow-2xl relative z-10"
-                alt="Modern building"
+                alt="About Fotabong Royal Enterprise"
               />
               <div className="absolute -bottom-10 -right-10 w-64 h-64 bg-chocolate/10 rounded-full -z-10"></div>
             </div>
@@ -60,17 +60,17 @@ const About = () => {
               </h2>
               <div className="space-y-6 text-gray-600 text-lg leading-relaxed">
                 <p>
-                  FOTABONG ROYAL ENTERPRISE is a professional construction and engineering company operating in Cameroon. 
-                  Founded with a vision to revolutionize the infrastructure landscape, we have executed critical 
+                  FOTABONG ROYAL ENTERPRISE is a professional construction and engineering company operating in Cameroon.
+                  Founded with a vision to revolutionize the infrastructure landscape, we have executed critical
                   government and private projects including buildings, roads, and bridges.
                 </p>
                 <p>
-                  Our multi-disciplinary team consists of qualified and experienced engineers, senior technicians, 
+                  Our multi-disciplinary team consists of qualified and experienced engineers, senior technicians,
                   and skilled laborers who work under the guidance of our Managing Director, {COMPANY_INFO.md}.
                 </p>
                 <p>
-                  From land title processing to complex civil engineering works, we provide a holistic 
-                  approach to real estate and construction, ensuring every client project is handled 
+                  From land title processing to complex civil engineering works, we provide a holistic
+                  approach to real estate and construction, ensuring every client project is handled
                   with technical precision and financial transparency.
                 </p>
               </div>
@@ -92,7 +92,7 @@ const About = () => {
             { title: "Community", desc: "Building infrastructure that empowers Cameroonians.", icon: Users },
           ].map((v, i) => (
             // Cast motion.div to any to avoid IntrinsicAttributes typing error
-            <motion.div 
+            <motion.div
               key={i}
               {...({
                 whileHover: { y: -10 }

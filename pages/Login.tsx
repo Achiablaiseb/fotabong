@@ -1,8 +1,10 @@
 
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Lock, LogIn, AlertCircle, Loader2 } from 'lucide-react';
 import { UserProfile } from '../types';
+import { supabase } from '../lib/supabase';
 
 const Login = ({ onLogin }: { onLogin: (u: UserProfile) => void }) => {
   const [email, setEmail] = useState('');
@@ -15,23 +17,44 @@ const Login = ({ onLogin }: { onLogin: (u: UserProfile) => void }) => {
     setLoading(true);
     setError('');
 
-    // Simulate Auth
-    setTimeout(() => {
-      if (email === 'admin@fotabong.com' && password === 'admin123') {
-        const user: UserProfile = { id: '1', name: 'Admin User', email, role: 'ADMIN' };
-        localStorage.setItem('fre_user', JSON.stringify(user));
-        onLogin(user);
-        window.location.hash = '#/dashboard';
-      } else if (email === 'client@example.com' && password === 'client123') {
-        const user: UserProfile = { id: '2', name: 'Prince Client', email, role: 'CLIENT' };
-        localStorage.setItem('fre_user', JSON.stringify(user));
-        onLogin(user);
-        window.location.hash = '#/dashboard';
-      } else {
-        setError('Invalid credentials. Please use admin@fotabong.com / admin123 or client@example.com / client123');
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (authError) throw authError;
+
+      if (user) {
+        // Fetch profile
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError) throw profileError;
+
+        if (profile) {
+          const userProfile: UserProfile = {
+            id: profile.id,
+            name: profile.name || user.email || 'User',
+            email: profile.email || user.email || '',
+            role: profile.role || 'CLIENT',
+          };
+
+          // Legacy local storage support if needed, but App.tsx should handle this via onLogin or auth listener
+          localStorage.setItem('fre_user', JSON.stringify(userProfile));
+          onLogin(userProfile);
+          window.location.hash = '#/dashboard';
+        }
       }
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setError(err.message || 'Failed to login');
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -48,7 +71,7 @@ const Login = ({ onLogin }: { onLogin: (u: UserProfile) => void }) => {
           <h2 className="text-3xl font-black mb-2">Welcome Back</h2>
           <p className="text-blue-100 opacity-80">Access your construction dashboard</p>
         </div>
-        
+
         <form onSubmit={handleLogin} className="p-10 space-y-6">
           {error && (
             // Cast motion.div to any to avoid IntrinsicAttributes typing error
@@ -116,3 +139,4 @@ const Login = ({ onLogin }: { onLogin: (u: UserProfile) => void }) => {
 };
 
 export default Login;
+

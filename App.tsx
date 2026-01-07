@@ -1,10 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
+import { supabase } from './lib/supabase';
 import { HashRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Menu, X, Phone, Mail, MapPin, MessageCircle, 
-  ChevronRight, LayoutDashboard, LogOut, User, 
+import {
+  Menu, X, Phone, Mail, MapPin, MessageCircle,
+  ChevronRight, LayoutDashboard, LogOut, User,
   HardHat, Info, Briefcase, PhoneCall, LogIn,
   Home as HomeIcon
 } from 'lucide-react';
@@ -18,6 +19,16 @@ import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import { COMPANY_INFO } from './constants';
 import { UserProfile } from './types';
+import { ToastProvider } from './components/Toast';
+import ElevenLabsWidget from './components/ElevenLabsWidget';
+
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+};
 
 const Navbar = ({ user, onLogout }: { user: UserProfile | null; onLogout: () => void }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -41,8 +52,8 @@ const Navbar = ({ user, onLogout }: { user: UserProfile | null; onLogout: () => 
         <div className="flex justify-between h-20">
           <div className="flex items-center">
             <Link to="/" className="flex items-center gap-3 group">
-              <img 
-                src="https://i.postimg.cc/2jcQwfK9/Whats-App-Image-2026-01-06-at-5-38-07-PM.jpg" 
+              <img
+                src="https://i.postimg.cc/2jcQwfK9/Whats-App-Image-2026-01-06-at-5-38-07-PM.jpg"
                 alt="FOTABONG ROYAL ENTERPRISE Logo"
                 className="h-12 w-auto object-contain rounded-lg shadow-sm group-hover:scale-105 transition-transform"
               />
@@ -59,9 +70,8 @@ const Navbar = ({ user, onLogout }: { user: UserProfile | null; onLogout: () => 
               <Link
                 key={link.path}
                 to={link.path}
-                className={`text-sm font-semibold transition-colors hover:text-chocolate ${
-                  location.pathname === link.path ? 'text-primary' : 'text-gray-600'
-                }`}
+                className={`text-sm font-semibold transition-colors hover:text-chocolate ${location.pathname === link.path ? 'text-primary' : 'text-gray-600'
+                  }`}
               >
                 {link.name}
               </Link>
@@ -151,13 +161,13 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-12">
         <div className="col-span-1 md:col-span-1">
           <Link to="/" className="flex items-center gap-3 mb-6 group">
-             <img 
-                src="https://i.postimg.cc/2jcQwfK9/Whats-App-Image-2026-01-06-at-5-38-07-PM.jpg" 
-                alt="Logo"
-                className="h-10 w-auto object-contain rounded-md"
-              />
+            <img
+              src="https://i.postimg.cc/2jcQwfK9/Whats-App-Image-2026-01-06-at-5-38-07-PM.jpg"
+              alt="Logo"
+              className="h-10 w-auto object-contain rounded-md"
+            />
             <h3 className="text-lg font-bold text-white tracking-wider leading-tight">
-              FOTABONG ROYAL<br/><span className="text-chocolate text-xs uppercase tracking-widest">ENTERPRISE</span>
+              FOTABONG ROYAL<br /><span className="text-chocolate text-xs uppercase tracking-widest">ENTERPRISE</span>
             </h3>
           </Link>
           <p className="text-gray-400 text-sm leading-relaxed mb-6">
@@ -219,48 +229,90 @@ const Footer = () => {
   );
 };
 
+
 export default function App() {
   const [user, setUser] = useState<UserProfile | null>(null);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('fre_user');
-    if (savedUser) setUser(JSON.parse(savedUser));
+    // Check active session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      } else {
+        // Fallback to local storage if needed, or clear it
+        const savedUser = localStorage.getItem('fre_user');
+        if (savedUser) setUser(JSON.parse(savedUser));
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      } else {
+        setUser(null);
+        localStorage.removeItem('fre_user');
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const handleLogout = () => {
+  const fetchProfile = async (userId: string) => {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (profile) {
+      const userProfile: UserProfile = {
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        role: profile.role,
+      };
+      setUser(userProfile);
+      localStorage.setItem('fre_user', JSON.stringify(userProfile));
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     localStorage.removeItem('fre_user');
     setUser(null);
     window.location.hash = '#/';
   };
 
+
   return (
-    <Router>
-      <div className="min-h-screen font-sans text-gray-900 bg-white selection:bg-primary selection:text-white">
-        <Navbar user={user} onLogout={handleLogout} />
-        <main className="pt-0">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/login" element={<Login onLogin={(u) => setUser(u)} />} />
-            <Route 
-              path="/dashboard/*" 
-              element={<Dashboard user={user} onLogout={handleLogout} />} 
-            />
-          </Routes>
-        </main>
-        <Footer />
-        <a 
-          href={`https://wa.me/${COMPANY_INFO.whatsapp}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="fixed bottom-8 right-8 bg-green-500 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform z-[100] flex items-center justify-center"
-        >
-          <MessageCircle size={32} />
-        </a>
-      </div>
-    </Router>
+    <ToastProvider>
+      <Router>
+        <div className="flex flex-col min-h-screen">
+          <Navbar user={user} onLogout={handleLogout} />
+          <main className="flex-grow pt-16">
+            <ScrollToTop />
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/services" element={<Services />} />
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/login" element={<Login onLogin={(u) => setUser(u)} />} />
+              <Route path="/dashboard/*" element={<Dashboard user={user} onLogout={handleLogout} />} />
+            </Routes>
+          </main>
+          <Footer />
+          <a
+            href={`https://wa.me/${COMPANY_INFO.whatsapp}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="fixed bottom-8 right-8 bg-green-500 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform z-[100] flex items-center justify-center border-4 border-white"
+          >
+            <MessageCircle size={28} />
+          </a>
+        </div>
+      </Router>
+      <ElevenLabsWidget />
+    </ToastProvider>
   );
 }
